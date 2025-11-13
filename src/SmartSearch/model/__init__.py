@@ -1,4 +1,4 @@
-from .models import AI_SQL_Promter, AI_SQL_Composer
+from .models import AI_Interviewer, AI_Validator
 """
 создает запрос к бд и обрабатывает ответ от бд
 
@@ -23,12 +23,12 @@ from .models import AI_SQL_Promter, AI_SQL_Composer
 # sql_prompt_generator = AI_SQL_Prompter(config_data) 
 # ai_composer = AI_Composer(config_data)
 
-sql_prompt_generator = AI_SQL_Promter()
-ai_composer = AI_SQL_Composer()
+ai_validator = AI_Validator()
+ai_interviewer = AI_Interviewer()
 
 
 
 __all__ = [
-    "sql_prompt_generator",
-    "ai_composer"
+    ai_interviewer,
+    ai_validator,
 ]
