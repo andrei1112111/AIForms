@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <!-- хедер -->
+  <header class="header">
+    <div class="logo">
+      <i class="fas fa-robot logo-icon"></i>
+      <span>SmartSearchAI</span>
+    </div>
+    
+    <div class="account-wrap">
+      <button id="chooseAccountBtn" class="choose-btn">Выбрать аккаунт</button>
+      <div id="accountSummary" class="account-summary" hidden>
+        <span id="summaryCompany"></span>
+        <span id="summaryUsername"></span>
+          <button id="logoutBtn" class="logout-btn" title="Выйти из аккаунта">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+  
+  <!-- главная страничка -->
+  <section class="hero" id="heroSection">
+    <div class="floating-element floating-1"></div>
+    <div class="floating-element floating-2"></div>
+    <div class="floating-element floating-3"></div>
+    
+    <h1 class="hero-title">Smart Search AI</h1>
+    <p class="hero-subtitle">Интеллектуальный пользовательский интерфейс с умной строкой поиска для работы с корпоративными данными на естественном языке.</p>
+    
+    <!-- строка запроса -->
+    <div class="search-container">
+      <input type="text" id="searchInput" class="search-box" placeholder="Задайте любой вопрос...">
+      <button id="searchBtn" class="search-btn">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </section>
+  
+  <!-- чатик -->
+  <main class="chat-area" id="chatArea">
+    <!-- сообщения будут добавляться сюда -->
+  </main>
+  
+  <!-- Chat Search Container будет добавляться динамически -->
+  
+  <!-- модалка выбора аккаунта -->
+  <div id="accountModal" class="modal" hidden>
+    <div class="modal-content">
+      <h3>Выбрать аккаунт</h3>
+      <label>Компания<br><input id="companyInput" type="text"></label>
+      <label>ФИО / Username<br><input id="usernameInput" type="text"></label>
+      <div class="modal-actions">
+        <button id="confirmAccountBtn" class="modal-btn confirm-btn">✅ Подтвердить</button>
+        <button id="cancelAccountBtn" class="modal-btn cancel-btn">✖️ Отмена</button>
+      </div>
+      <div id="accountError" class="error" hidden></div>
+    </div>
+  </div>
+  
+  <!-- подсветка и отображение md'шек -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="/static/js/script.js"></script>
+</body>
+</html>
