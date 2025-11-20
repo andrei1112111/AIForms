@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from .base_entity import Base
 
 
-class UserTable(Base):
+class User(Base):
     __tablename__ = "users"
 
     id = Column(INTEGER, primary_key=True)
@@ -15,3 +15,9 @@ class UserTable(Base):
     client_secret = Column(TEXT, nullable=False)
     scopes = Column(TEXT, nullable=False)
     email = Column(TEXT, nullable=False)
+
+    forms = relationship(
+        "Form",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

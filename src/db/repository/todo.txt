@@ -1,2 +1,0 @@
-Создать файлы form_repository.py и user_repository.py
-Настроить ключи соответствия в entity и repository

@@ -1,7 +1,7 @@
-from .form_entity import FormTable
-from .user_entity import UserTable
+from .form_entity import Form
+from .user_entity import User
 
 __all__ = [
-    "FormTable",
-    "UserTable",
+    "Form",
+    "User",
 ]
