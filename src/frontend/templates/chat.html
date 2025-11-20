@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chat - {{ form_title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .chat-container { max-width: 600px; margin: 0 auto; }
+        .question { background: #f0f0f0; padding: 15px; border-radius: 10px; margin: 10px 0; }
+        .input-area { display: flex; margin-top: 20px; }
+        #userInput { flex: 1; padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; margin-left: 10px; background: #4285f4; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .success { color: green; font-weight: bold; }
+        .form-info { background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>AI Assistant: {{ form_title }}</h1>
+
+        <div class="form-info">
+            <p><strong>Описание:</strong> {{ form_description }}</p>
+        </div>
+
+        <div id="chatArea">
+            <div class="question" id="currentQuestion">
+                Загрузка...
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Введите ваш ответ..." disabled>
+            <button id="sendButton" onclick="sendResponse()" disabled>Отправить</button>
+        </div>
+
+        <div id="completionMessage" class="success" style="display: none;">
+            ✅ Все данные собраны и записаны в таблицу! Чат завершен.
+        </div>
+    </div>
+
+    <script>
+        let currentJson = {};
+        let chatCompleted = false;
+
+        // Начинаем диалог при загрузке страницы
+        window.onload = function() {
+            startChat();
+        };
+
+        async function startChat() {
+            try {
+                const response = await fetch(`/api/chat/{{ chat_id }}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                updateChat(data);
+            } catch (error) {
+                console.error('Error starting chat:', error);
+            }
+        }
+
+        async function sendResponse() {
+            if (chatCompleted) return;
+
+            const userInput = document.getElementById('userInput');
+            const userResponse = userInput.value.trim();
+
+            if (!userResponse) return;
+
+            // Блокируем интерфейс на время обработки
+            userInput.disabled = true;
+            document.getElementById('sendButton').disabled = true;
+
+            try {
+                const response = await fetch(`/api/chat/{{ chat_id }}/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_response: userResponse,
+                        previous_question: document.getElementById('currentQuestion').textContent,
+                        current_json: currentJson
+                    })
+                });
+
+                const data = await response.json();
+                updateChat(data);
+
+                // Очищаем поле ввода
+                userInput.value = '';
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Ошибка при отправке сообщения');
+            } finally {
+                if (!chatCompleted) {
+                    userInput.disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    userInput.focus();
+                }
+            }
+        }
+
+        function updateChat(data) {
+            const questionElement = document.getElementById('currentQuestion');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const completionMessage = document.getElementById('completionMessage');
+
+            currentJson = data.data || {};
+
+            if (data.question === 'success') {
+                chatCompleted = true;
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                completionMessage.style.display = 'block';
+                questionElement.textContent = 'Вы успешно заполнили форму! Спасибо';
+
+                if (data.sheet_update) {
+                    console.log('Data saved to sheet:', data.sheet_update);
+                }
+            } else {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+                questionElement.textContent = data.question;
+            }
+        }
+
+        // Поддержка Enter для отправки
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendResponse();
+            }
+        });
+    </script>
+</body>
+</html>

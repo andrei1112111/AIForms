@@ -88,7 +88,7 @@ async function createForm() {
     })
   });
   const data = await response.json();
-  document.getElementById("output").innerHTML = `Ваша форма уже создана! Ссылка на таблицу со всеми полученными данными: <a href="${data.url}" target="_blank">${data.url}</a>`;
+  document.getElementById("output").innerHTML = `Ваша форма уже создана!<br> Ссылка на таблицу со всеми полученными данными: <a href="${data.url}" target="_blank">${data.url}</a><br>Эту ссылку вы можете отправлять для заполнения формы: <a href="${data.public_link}" target="_blank">${data.public_link}</a>`;
 }
 </script>
 </body>

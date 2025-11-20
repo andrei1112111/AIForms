@@ -7,6 +7,13 @@ import requests
 
 app = Flask(__name__)
 app.template_folder = "frontend/templates"
+app.secret_key = "your-secret-key"
+
+# Настройки Google OAuth2
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # разрешаем HTTP для теста
+GOOGLE_CLIENT_ID = "624387588725-kljja5hh0d2jqb59nggni480m4p55ovv.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+REDIRECT_URI = "http://127.0.0.1:5000/callback"
 
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
@@ -141,7 +148,13 @@ def create_user_sheet(columns, title="AI Form Responses", description="не ук
     ).execute()
 
     url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
-    return {"id": spreadsheet_id, "url": url, "title": title, "columns": columns, "description": description}
+    return {"id": spreadsheet_id,
+            "url": url,
+            "title": title,
+            "columns": columns,
+            "description": description,
+            "chat_id": 1,
+            "public_link": f"http://127.0.0.1:5000/chat/{1}"}
 
 
 def update_user_sheet(spreadsheet_id, values_dict):
@@ -182,6 +195,22 @@ def edit_forms():
     return render_template("edit_forms.html")
 
 
+@app.route("/chat/<chat_id>")
+def chat_interface(chat_id):
+    """Страница чата для конкретной формы"""
+    if "credentials" not in session:
+        return redirect(url_for("index"))
+
+    form_data = "это формачка"
+    if not form_data:
+        return "Чат не найден", 404
+
+    return render_template("chat.html",
+                           form_title=form_data["title"],
+                           form_description=form_data["description"],
+                           chat_id=chat_id)
+
+
 @app.route("/api/create_sheet", methods=["POST"])
 def api_create_sheet():
     data = request.json
@@ -199,14 +228,53 @@ def api_create_sheet():
         "url": result["url"],
         "title": result["title"],
         "columns": result["columns"],
-        "description": result["description"]
+        "description": result["description"],
+        "chat_id": result["chat_id"]
     })
 
-    # Важно: сохраняем изменения в сессии
     session.modified = True
 
     session["sheet_id"] = result["id"]
     return jsonify(result)
+
+
+@app.route("/api/chat/<chat_id>/send", methods=["POST"])
+def api_chat_send(chat_id):
+    """Обработка сообщений в чате с ИИ"""
+    if "credentials" not in session:
+        return jsonify({"error": "Not authorized"}), 401
+
+    data = request.json
+    user_response = data.get("user_response", "")
+    previous_question = data.get("previous_question", "")
+    current_data = data.get("current_data", {})
+
+    # Получаем описание формы из "БД"
+    # table_description = FormDB.get_form_by_chat_id(chat_id)
+    table_description = "нет описания"
+
+    if not table_description:
+        return jsonify({"error": "Form not found"}), 404
+
+    # Подготавливаем запрос для ИИ
+    ai_request = {
+        "previous_question": previous_question,
+        "user_response": user_response,
+        "table_description": table_description,
+        "current_data": current_data
+    }
+
+    # ai_response = predict(ai_request)
+    ai_response = {"question": "вопрос", "data": {"test": "test"}}
+
+    question = ai_response.get("question", "")
+    data = ai_response.get("data", "")
+
+    if question == "success":
+        # дополняем таблицу
+        ...
+
+    return jsonify({"question": question, "data": data})  # во фронтенде проверка на конец диалога
 
 
 @app.route("/api/update_sheet", methods=["POST"])
