@@ -7,13 +7,6 @@ import requests
 
 app = Flask(__name__)
 app.template_folder = "frontend/templates"
-app.secret_key = "your-secret-key"
-
-# Настройки Google OAuth2
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # разрешаем HTTP для теста
-GOOGLE_CLIENT_ID = "624387588725-kljja5hh0d2jqb59nggni480m4p55ovv.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-REDIRECT_URI = "http://127.0.0.1:5000/callback"
 
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
