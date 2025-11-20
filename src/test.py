@@ -1,4 +1,4 @@
-from SmartSearch.model import ai_validator, ai_interviewer
+from SmartSearch.model import predict
 
 # testing 
 if __name__ == "__main__":
