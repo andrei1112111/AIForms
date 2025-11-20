@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Редактировать формы</title>
+<style>
+body { font-family: sans-serif; margin: 30px; }
+table { border-collapse: collapse; width: 80%; margin-bottom: 20px; }
+td, th { border: 1px solid #ccc; padding: 8px; }
+input { width: 100%; }
+button { padding: 5px 10px; margin: 5px; }
+.sheet-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+</style>
+</head>
+<body>
+<h2>Ваши таблицы</h2>
+<div id="formsContainer">
+    <p id="loading">Загрузка...</p>
+</div>
+
+<br><br>
+<button onclick="window.location.href='/'">Вернуться на главную страницу</button>
+
+<script>
+async function fetchForms() {
+    try {
+        const res = await fetch("/api/list_sheets");
+        const data = await res.json();
+        const container = document.getElementById("formsContainer");
+
+        if (data.length === 0) {
+            container.innerHTML = "<p>У вас пока нет созданных таблиц.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        data.forEach(sheet => {
+            const div = document.createElement("div");
+            div.className = "sheet-card";
+            div.innerHTML = `
+                <h3>${sheet.title || 'Без названия'}</h3>
+                <p> ${sheet.description || 'Нет описания'}</p>
+                <p><strong>Колонки:</strong> ${sheet.columns ? sheet.columns.join(', ') : 'Не указаны'}</p>
+                <a href="${sheet.url}" target="_blank">Открыть в Google Sheets</a>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error("Ошибка загрузки:", error);
+        document.getElementById("formsContainer").innerHTML =
+            "<p>Ошибка загрузки данных</p>";
+    }
+}
+
+// Загружаем формы при загрузке страницы
+document.addEventListener("DOMContentLoaded", fetchForms);
+</script>
+</body>
+</html>
