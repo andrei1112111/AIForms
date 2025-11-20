@@ -24,8 +24,8 @@ class FormsRepository:
         return self.session.query(Form).filter(Form.id == id).first()
 
 
-    def get_by_creator_id(self, creator_id: int) -> Optional[Form]:
-        return self.session.query(Form).filter(Form.id == creator_id).first()
+    def get_by_url(self, url: str) -> Optional[Form]:
+        return self.session.query(Form).filter(Form.url == url).first()
     
     def get_by_title(self, title: str) -> Optional[Form]:
         return self.session.query(Form).filter(Form.title == title).first()
