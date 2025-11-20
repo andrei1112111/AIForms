@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Создать форму</title>
+<style>
+body { font-family: sans-serif; margin: 30px; }
+input, textarea { padding: 5px; margin: 5px; width: 300px; }
+button { padding: 5px 10px; margin: 5px; }
+ul { list-style-type: none; padding: 0; }
+li { margin: 5px 0; }
+.column-item { display: flex; align-items: center; }
+.column-item input { margin-right: 5px; }
+</style>
+</head>
+<body>
+<h2>Создать форму</h2>
+
+<div>
+  <label>Название формы:</label><br>
+  <input type="text" id="formTitle" placeholder="Название формы"><br>
+  <label>Описание (инструкции для ассистента):</label><br>
+  <input type="text" id="formDesc" placeholder="Как ассистент должен вести себя"><br>
+</div>
+
+<h3>Добавить колонки:</h3>
+<div>
+  <input type="text" id="colName" placeholder="Название столбца">
+  <input type="text" id="colDesc" placeholder="Что хотим узнать">
+  <button onclick="addColumn()">Добавить</button>
+</div>
+
+<ul id="columnsList"></ul>
+
+<button onclick="createForm()">Создать таблицу</button>
+<pre id="output"></pre>
+<br><br>
+<button onclick="window.location.href='/'">Вернуться на главную страницу</button>
+
+<script>
+let columns = [];
+
+function addColumn() {
+  const name = document.getElementById("colName").value.trim();
+  const desc = document.getElementById("colDesc").value.trim();
+  if(!name || !desc) return;
+
+  columns.push({name, desc});
+  renderColumns();
+  document.getElementById("colName").value = "";
+  document.getElementById("colDesc").value = "";
+}
+
+function renderColumns() {
+  const ul = document.getElementById("columnsList");
+  ul.innerHTML = "";
+  columns.forEach((col, idx) => {
+    const li = document.createElement("li");
+    li.className = "column-item";
+    li.innerHTML = `
+      <input value="${col.name}" onchange="updateColumnName(${idx}, this.value)">
+      <input value="${col.desc}" onchange="updateColumnDesc(${idx}, this.value)">
+      <button onclick="removeColumn(${idx})">❌</button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function updateColumnName(idx, val) { columns[idx].name = val; }
+function updateColumnDesc(idx, val) { columns[idx].desc = val; }
+function removeColumn(idx) { columns.splice(idx, 1); renderColumns(); }
+
+async function createForm() {
+  const title = document.getElementById("formTitle").value.trim();
+  const desc = document.getElementById("formDesc").value.trim();
+  if(!title || !desc || columns.length === 0) {
+    alert("Заполните все поля и добавьте хотя бы один столбец!");
+    return;
+  }
+
+  const response = await fetch("/api/create_sheet", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      title: title,
+      description: desc,
+      columns: columns.map(c => c.name)
+    })
+  });
+  const data = await response.json();
+  document.getElementById("output").innerHTML = `Ваша форма уже создана!<br> Ссылка на таблицу со всеми полученными данными: <a href="${data.url}" target="_blank">${data.url}</a><br>Эту ссылку вы можете отправлять для заполнения формы: <a href="${data.public_link}" target="_blank">${data.public_link}</a>`;
+}
+</script>
+</body>
+</html>
