@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Forms - Dashboard</title>
+</head>
+<body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+  <h2>Привет, {{email}}</h2>
+
+  <!-- Новая кнопка для редиректа на создание таблицы -->
+  <button onclick="window.location.href='/create_form'">Создать новую таблицу</button>
+  <button onclick="window.location.href='/edit_forms'">Мои таблицы</button>
+
+
+  <br><br>
+
+  <a href="/logout"><button>Выйти</button></a>
+
+  <pre id="output"></pre>
+
+  <script>
+    async function addData() {
+      const res = await fetch("/api/update_sheet", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({Имя: "Андрей", Возраст: "23", Город: "Москва"})
+      });
+      const data = await res.json();
+      document.getElementById("output").innerText = "Добавлено:\n" + JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
