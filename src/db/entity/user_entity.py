@@ -7,7 +7,7 @@ from .base_entity import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(INTEGER, primary_key=True)
+    id = Column(INTEGER, autoincrement=True, primary_key=True)
     token = Column(TEXT, nullable=False)
     refresh_token = Column(TEXT, nullable=False)
     token_url = Column(TEXT, nullable=False)
@@ -15,9 +15,3 @@ class User(Base):
     client_secret = Column(TEXT, nullable=False)
     scopes = Column(TEXT, nullable=False)
     email = Column(TEXT, nullable=False)
-
-    forms = relationship(
-        "Form",
-        back_populates="user",
-        cascade="all, delete-orphan"
-    )

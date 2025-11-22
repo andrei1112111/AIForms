@@ -5,6 +5,14 @@ from googleapiclient.discovery import build
 import os
 import requests
 
+from model import predict
+from db.entity import User, Form
+from db.repository import userRepository, formRepository
+
+
+HOST = "127.0.0.1"
+PORT = 5000
+
 app = Flask(__name__)
 app.template_folder = "frontend/templates"
 app.secret_key = "your-secret-key"
@@ -13,7 +21,7 @@ app.secret_key = "your-secret-key"
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # разрешаем HTTP для теста
 GOOGLE_CLIENT_ID = "624387588725-kljja5hh0d2jqb59nggni480m4p55ovv.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
-REDIRECT_URI = "http://127.0.0.1:5000/callback"
+REDIRECT_URI = f"http://{HOST}:{PORT}/callback"
 
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
@@ -23,15 +31,18 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets"  # для Google Sheets
 ]
 
-
-# ======================
-# OAuth2 авторизация
-# ======================
 @app.route("/")
 def index():
-    if "credentials" not in session:
+    user_id = session.get("user_id")
+    if not user_id:
         return render_template("login.html")
-    return render_template("dashboard.html", email=session["credentials"].get("email"))
+
+    user = userRepository.get_by_id(user_id)
+    if not user:
+        session.clear()
+        return render_template("login.html")
+
+    return render_template("dashboard.html", email=user.email)
 
 
 @app.route("/login")
@@ -54,13 +65,14 @@ def login():
         include_granted_scopes="true",
         prompt="consent"
     )
+
     session["state"] = state
     return redirect(authorization_url)
 
 
 @app.route("/callback")
 def callback():
-    state = session["state"]
+    state = session.get("state")
     flow = Flow.from_client_config(
         {
             "web": {
@@ -84,20 +96,29 @@ def callback():
         headers={"Authorization": f"Bearer {credentials.token}"},
     ).json()
 
-    session["credentials"] = {
-        "token": credentials.token,
-        "refresh_token": credentials.refresh_token,
-        "token_uri": credentials.token_uri,
-        "client_id": credentials.client_id,
-        "client_secret": credentials.client_secret,
-        "scopes": credentials.scopes,
-        "email": userinfo["email"],
-    }
+    # Сохраняем пользователя в БД
+    user = userRepository.get_by_email(userinfo["email"])
+    if not user:
+        user = User(
+            token=credentials.token,
+            refresh_token=credentials.refresh_token,
+            token_url=credentials.token_uri,
+            client_id=credentials.client_id,
+            client_secret=GOOGLE_CLIENT_SECRET,
+            scopes=",".join(credentials.scopes),
+            email=userinfo["email"]
+        )
+        userRepository.add(user)
+    else:
+        # Обновляем токены существующего пользователя
+        user.token = credentials.token
+        user.refresh_token = credentials.refresh_token
+        user.token_url = credentials.token_uri
+        user.client_id = credentials.client_id
+        user.scopes = ",".join(credentials.scopes)
+        userRepository.update_user(user)
 
-    # Инициализируем список таблиц для пользователя
-    if "user_sheets" not in session:
-        session["user_sheets"] = []
-
+    session["user_id"] = user.id
     return redirect(url_for("index"))
 
 
@@ -107,29 +128,30 @@ def logout():
     return redirect(url_for("index"))
 
 
-# ======================
-# Работа с Google Sheets
-# ======================
-def get_user_credentials():
-    creds_info = session.get("credentials")
-    if not creds_info:
+def get_user_credentials(user_id):
+    user = userRepository.get_by_id(user_id)
+    if not user:
         return None
+
     return Credentials(
-        token=creds_info["token"],
-        refresh_token=creds_info["refresh_token"],
-        token_uri=creds_info["token_uri"],
-        client_id=creds_info["client_id"],
-        client_secret=creds_info["client_secret"],
-        scopes=creds_info["scopes"]
+        token=user.token,
+        refresh_token=user.refresh_token,
+        token_uri=user.token_url,
+        client_id=user.client_id,
+        client_secret=user.client_secret,
+        scopes=user.scopes.split(",")
     )
 
 
-def create_user_sheet(columns, title="AI Form Responses", description="не указано"):
+def create_user_sheet(user_id, columns, title="AI Form Responses", description="не указано"):
     """
     Создает таблицу с заданными колонками.
     Возвращает URL и ID таблицы.
     """
-    creds = get_user_credentials()
+    creds = get_user_credentials(user_id)
+    if not creds:
+        return None
+
     service = build("sheets", "v4", credentials=creds)
 
     spreadsheet = service.spreadsheets().create(
@@ -138,34 +160,60 @@ def create_user_sheet(columns, title="AI Form Responses", description="не ук
     ).execute()
 
     spreadsheet_id = spreadsheet["spreadsheetId"]
+    print(columns)
 
     # создаем шапку таблицы
     service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
         range="A1",
         valueInputOption="RAW",
-        body={"values": [columns]}
+        body={"values": [[i["name"] for i in columns]]}
     ).execute()
 
     url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
-    return {"id": spreadsheet_id,
-            "url": url,
-            "title": title,
-            "columns": columns,
-            "description": description,
-            "chat_id": 1,
-            "public_link": f"http://127.0.0.1:5000/chat/{1}"}
+
+    # Сохраняем форму в БД
+    chat_id = len(formRepository.get_forms_by_user_id(user_id)) + 1
+    public_link = f"http://{HOST}:{PORT}/chat/{user_id}/{chat_id}"
+
+    form = Form(
+        columns=columns,
+        title=title,
+        url=url,
+        description=description,
+        chat_link=public_link,
+        creator_id=user_id
+    )
+    formRepository.add(form)
+
+    return {
+        "id": spreadsheet_id,
+        "url": url,
+        "title": title,
+        "columns": columns,
+        "description": description,
+        "chat_id": chat_id,
+        "public_link": public_link
+    }
 
 
-def update_user_sheet(spreadsheet_id, values_dict):
+def update_user_sheet(user_id, spreadsheet_id, values_dict, expected_columns):
     """
     Добавляет строку в таблицу по словарю: {column: value}.
+    expected_columns: порядок колонок
     """
-    creds = get_user_credentials()
+    creds = get_user_credentials(user_id)
+    if not creds:
+        return {"error": "User not found"}
+
     service = build("sheets", "v4", credentials=creds)
 
-    columns = list(values_dict.keys())
-    values = list(values_dict.values())
+    if expected_columns:
+        columns = expected_columns
+        values = [values_dict.get(col, "") for col in columns]  # если значение отсутствует, ставим пустую строку
+    else:
+        columns = list(values_dict.keys())
+        values = list(values_dict.values())
 
     service.spreadsheets().values().append(
         spreadsheetId=spreadsheet_id,
@@ -177,71 +225,64 @@ def update_user_sheet(spreadsheet_id, values_dict):
     return {"status": "ok", "inserted": dict(zip(columns, values))}
 
 
-# ======================
-# REST API для фронтенда
-# ======================
-
 @app.route("/create_form")
 def create_form():
-    if "credentials" not in session:
+    if "user_id" not in session:
         return redirect(url_for("index"))
     return render_template("create_form.html")
 
 
 @app.route("/edit_forms")
 def edit_forms():
-    if "credentials" not in session:
+    if "user_id" not in session:
         return redirect(url_for("index"))
     return render_template("edit_forms.html")
 
 
-@app.route("/chat/<chat_id>")
-def chat_interface(chat_id):
+@app.route("/chat/<creator_user_id>/<chat_id>")
+def chat_interface(creator_user_id, chat_id):
     """Страница чата для конкретной формы"""
-    if "credentials" not in session:
+    if "user_id" not in session:
         return redirect(url_for("index"))
 
-    form_data = "это формачка"
-    if not form_data:
+    user_id = session["user_id"]
+    form = formRepository.get_by_chat_link(f"http://{HOST}:{PORT}/chat/{creator_user_id}/{chat_id}")
+
+    # Находим форму по chat_id (в данном случае используем порядковый номер)
+    if not form:
         return "Чат не найден", 404
 
     return render_template("chat.html",
-                           form_title=form_data["title"],
-                           form_description=form_data["description"],
-                           chat_id=chat_id)
+                           form_title=form.title,
+                           form_description=form.description,
+                           chat_id=chat_id,
+                           creator_user_id=creator_user_id
+                           )
 
 
 @app.route("/api/create_sheet", methods=["POST"])
 def api_create_sheet():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authorized"}), 401
+
     data = request.json
     columns = data.get("columns", [])
     title = data.get("title", "AI Form Responses")
     description = data.get("description", "не указано")
-    result = create_user_sheet(columns, title, description)
 
-    # Сохраняем информацию о таблице в сессии пользователя
-    if "user_sheets" not in session:
-        session["user_sheets"] = []
+    result = create_user_sheet(user_id, columns, title, description)
+    if not result:
+        return jsonify({"error": "Failed to create sheet"}), 500
 
-    session["user_sheets"].append({
-        "id": result["id"],
-        "url": result["url"],
-        "title": result["title"],
-        "columns": result["columns"],
-        "description": result["description"],
-        "chat_id": result["chat_id"]
-    })
-
-    session.modified = True
-
-    session["sheet_id"] = result["id"]
     return jsonify(result)
 
 
-@app.route("/api/chat/<chat_id>/send", methods=["POST"])
-def api_chat_send(chat_id):
+@app.route("/api/chat/<creator_user_id>/<chat_id>/send", methods=["POST"])
+def api_chat_send(creator_user_id, chat_id):
     """Обработка сообщений в чате с ИИ"""
-    if "credentials" not in session:
+    user_id = session.get("user_id")
+    if not user_id:
         return jsonify({"error": "Not authorized"}), 401
 
     data = request.json
@@ -249,52 +290,104 @@ def api_chat_send(chat_id):
     previous_question = data.get("previous_question", "")
     current_data = data.get("current_data", {})
 
-    # Получаем описание формы из "БД"
-    # table_description = FormDB.get_form_by_chat_id(chat_id)
-    table_description = "нет описания"
-
-    if not table_description:
+    # Получаем формы пользователя и находим нужную по chat_id
+    form = formRepository.get_by_chat_link(f"http://{HOST}:{PORT}/chat/{creator_user_id}/{chat_id}")
+    if not form:
         return jsonify({"error": "Form not found"}), 404
+
+    if current_data == {}:
+        current_data = {i['name']: "" for i in form.columns}
 
     # Подготавливаем запрос для ИИ
     ai_request = {
         "previous_question": previous_question,
         "user_response": user_response,
-        "table_description": table_description,
+        "table_description": {
+            "описание поведения ассистента": form.description,
+            "описание полей в data": {i['name']: i['desc'] for i in form.columns},
+        },
         "current_data": current_data
     }
 
-    # ai_response = predict(ai_request)
-    ai_response = {"question": "вопрос", "data": {"test": "test"}}
+    ai_response = predict(str(ai_request))
 
     question = ai_response.get("question", "")
-    data = ai_response.get("data", "")
+    data = ai_response.get("data", {})
 
     if question == "success":
-        # дополняем таблицу
-        ...
+        update_user_sheet(creator_user_id, form.url.split("/d/")[1].split("/")[0], data, [i['name'] for i in form.columns])
 
-    return jsonify({"question": question, "data": data})  # во фронтенде проверка на конец диалога
+    return jsonify({"question": question, "data": data})
 
 
 @app.route("/api/update_sheet", methods=["POST"])
 def api_update_sheet():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authorized"}), 401
+
     data = request.json
-    spreadsheet_id = session.get("sheet_id")
+    spreadsheet_id = data.get("spreadsheet_id")
     if not spreadsheet_id:
-        return jsonify({"error": "No active sheet"}), 400
-    result = update_user_sheet(spreadsheet_id, data)
+        return jsonify({"error": "No spreadsheet ID provided"}), 400
+
+    result = update_user_sheet(user_id, spreadsheet_id, data, None)
     return jsonify(result)
 
 
 @app.route("/api/list_sheets")
 def api_list_sheets():
-    # Возвращаем список таблиц пользователя
-    return jsonify(session.get("user_sheets", []))
+    """Возвращает список таблиц пользователя"""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authorized"}), 401
+
+    forms = formRepository.get_forms_by_user_id(user_id)
+
+    # Преобразуем формы в формат для фронтенда
+    sheets_list = []
+    for i, form in enumerate(forms, 1):
+        sheets_list.append({
+            "id": form.id,
+            "url": form.url,
+            "title": form.title,
+            "columns": [f"{c['name']}: {c['desc']}" for c in form.columns],
+            "description": form.description,
+            "chat_id": i,
+            "public_link": form.chat_link
+        })
+
+    return jsonify(sheets_list)
 
 
-# ======================
-# Запуск
-# ======================
+@app.route("/api/delete_form/<int:form_id>", methods=["POST"])
+def api_delete_form(form_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authorized"}), 401
+
+    # Получаем форму
+    form = formRepository.get_by_id(form_id)
+    if not form:
+        return jsonify({"error": "Form not found"}), 404
+
+    # Проверка, что форма принадлежит пользователю
+    if form.creator_id != user_id:
+        return jsonify({"error": "You don't have permission to delete this form"}), 403
+
+    formRepository.delete(form)
+
+    # Удаляем Google Sheet
+    creds = get_user_credentials(user_id)
+    if creds:
+        service = build("sheets", "v4", credentials=creds)
+        try:
+            service.spreadsheets().delete(spreadsheetId=form.url.split("/d/")[1].split("/")[0]).execute()
+        except Exception as e:
+            pass
+
+    return jsonify({"status": "ok", "message": "Form deleted"})
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host=HOST, port=PORT, debug=True)

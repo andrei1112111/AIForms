@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
+
 sqllogger = logging.getLogger("sqlalchemy.engine.Engine.engine")
 sqllogger.setLevel(logging.WARNING)
 
@@ -10,7 +11,7 @@ engine = create_engine(
     "postgresql+psycopg2://{}:{}@{}:{}/{}".format(
         "forms_user",
         "forms_pass",
-        "10.9.45.203",
+        "127.0.0.1",
         5433,
         "metrics_db",
     ),

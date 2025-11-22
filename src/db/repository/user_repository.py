@@ -7,7 +7,7 @@ from src.db.entity import User
 logger = logging.getLogger(__name__)
 
 
-class UaersRepository:
+class UserRepository:
     def __init__(self, session: Session):
         self.session = session
     
@@ -25,5 +25,14 @@ class UaersRepository:
     def get_by_email(self, email: str) -> Optional[User]:
         return self.session.query(User).filter(User.email == email).first()
 
-    def get_all(self) -> List[User]:
+    def get_all(self) -> list[type[User]]:
         return self.session.query(User).all()
+
+    def update_user(self, user: User) -> Optional[User]:
+        try:
+            self.session.commit()
+            return user
+        except Exception as e:
+            logger.warning(f"Failed to update user {user.id}: {e}")
+            self.session.rollback()
+            return None

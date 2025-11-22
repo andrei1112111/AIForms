@@ -84,7 +84,7 @@ async function createForm() {
     body: JSON.stringify({
       title: title,
       description: desc,
-      columns: columns.map(c => c.name)
+      columns: columns
     })
   });
   const data = await response.json();

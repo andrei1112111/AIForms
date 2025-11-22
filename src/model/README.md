@@ -43,4 +43,4 @@ SELECT first_name, last_name, username, email, position, is_manager, is_active, 
 | **Статус аккаунта** | Активен |
 ```
 
-## **[На главную](../../../README.md)** 
+## **[На главную](../../README.md)** 

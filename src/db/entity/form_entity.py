@@ -20,8 +20,5 @@ class Form(Base):
 
     created_at = Column(DateTime, server_default='NOW()')
 
-    creator = relationship(
-        "User",
-        back_populates="forms",
-    )
+    creator_id = Column(INTEGER, nullable=False)
 

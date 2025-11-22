@@ -28,6 +28,23 @@ button { padding: 5px 10px; margin: 5px; }
 <button onclick="window.location.href='/'">Вернуться на главную страницу</button>
 
 <script>
+async function deleteForm(formId) {
+    if (!confirm("Вы уверены, что хотите удалить эту форму?")) return;
+
+    const response = await fetch(`/api/delete_form/${formId}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"}
+    });
+
+    const result = await response.json();
+    if (result.status === "ok") {
+        alert("Форма удалена");
+        location.reload();
+    } else {
+        alert(result.error || "Ошибка при удалении формы");
+    }
+}
+
 async function fetchForms() {
     try {
         const res = await fetch("/api/list_sheets");
@@ -49,6 +66,8 @@ async function fetchForms() {
                 <p> ${sheet.description || 'Нет описания'}</p>
                 <p><strong>Колонки:</strong> ${sheet.columns ? sheet.columns.join(', ') : 'Не указаны'}</p>
                 <a href="${sheet.url}" target="_blank">Открыть в Google Sheets</a>
+                <a href="${sheet.public_link}" target="_blank">Ссылка на заполнение формы</a>
+                <button onclick="deleteForm(${sheet.id})">Удалить</button>
             `;
             container.appendChild(div);
         });

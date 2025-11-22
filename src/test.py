@@ -1,6 +1,4 @@
-from SmartSearch.model import predict
-
-# testing 
+# testing
 if __name__ == "__main__":
 	field = "возраст"
 	format = " "
