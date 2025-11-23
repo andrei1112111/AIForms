@@ -264,7 +264,7 @@ class AI_Interface:
 			"current_data": "JSON с текущим состоянием таблицы",
 			"table_description": "формат и требования полей таблицы",
 			"previous_question": "последний заданный вопрос",
-			"answer": "ответ пользователя"
+			"user_response": "ответ пользователя"
 		}
 
 		ФОРМАТ ВЫХОДНЫХ ДАННЫХ:
@@ -274,7 +274,7 @@ class AI_Interface:
 			}
 
 		ТВОЯ ЗАДАЧА:
-		1. Задавать пользователю вопросы на основе структуры из "table_description" и заполнять поля в "current_data", пока не будут заполнены все.
+		1. Задавать пользователю вопросы на основе структуры из "table_description" и заполнять поля в "current_data".
 		2. Проверять валидность ответа пользователя относительно требований в "table_description".
 		3. Всегда следовать стилю поведения, указанному в "behavior".
 
@@ -282,7 +282,7 @@ class AI_Interface:
 		1. Не изменяй уже заполненные поля в "current_data".
 		2. Если ответ пользователя валиден — запиши его в "data".
 		3. Если ответ НЕ валиден — не записывай данные, кратко поясни ошибку и переформулируй запрос корректного значения.
-		4. Когда все поля заполнены — в поле "question" запиши "success".
+		4. Когда ты заполняешь последнее поле — в поле "question" запиши "success".
 		5. Не вставляй в вопрос пользователю текст или описание поля из "table_description" дословно — формулируй вопрос своими словами.
 		6. Строго соблюдай формат и требования "table_description". Не принимай невалидные ответы, даже если пользователь настаивает.
 		"""
@@ -292,6 +292,8 @@ class AI_Interface:
         Принимает сгенерированный вопрос и ответ пользователя.
         Возвращает json с результатами валидации ответа.
         """
+        print("INPUT DATA TO DEEPSEEK:")
+        print(json_data)
         try:
             response = self._client.chat.completions.create(
                 model=self._model,
@@ -304,5 +306,6 @@ class AI_Interface:
             )
         except Exception as e:
             raise e
-
+        print("DEEPSEEK RESPONSE:")
+        print(response.choices[0].message.content)
         return json.loads(response.choices[0].message.content)

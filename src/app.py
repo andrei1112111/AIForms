@@ -302,10 +302,8 @@ def api_chat_send(creator_user_id, chat_id):
     ai_request = {
         "previous_question": previous_question,
         "user_response": user_response,
-        "table_description": {
-            "описание поведения ассистента": form.description,
-            "описание полей в data": {i['name']: i['desc'] for i in form.columns},
-        },
+		"behavior": form.description,
+        "table_description": {i['name']: i['desc'] for i in form.columns},
         "current_data": current_data
     }
 
