@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
 
-from src.db.entity import Form
+from db.entity import Form
 
 logger = logging.getLogger(__name__)
 

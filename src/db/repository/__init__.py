@@ -1,7 +1,7 @@
 from .form_repository import FormRepository
 from .user_repository import UserRepository
 
-from src.db.session import Session
+from db.session import Session
 
 
 formRepository = FormRepository(Session())

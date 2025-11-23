@@ -1,20 +1,16 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 import logging
+from config import config
 
 
 sqllogger = logging.getLogger("sqlalchemy.engine.Engine.engine")
 sqllogger.setLevel(logging.WARNING)
 
 
+
 engine = create_engine(
-    "postgresql+psycopg2://{}:{}@{}:{}/{}".format(
-        "forms_user",
-        "forms_pass",
-        "127.0.0.1",
-        5433,
-        "metrics_db",
-    ),
+    "postgresql+psycopg2://postgres:43720@localhost:5432/aiforms",
     pool_size=5,
     max_overflow=10,
     echo=False,
@@ -26,7 +22,7 @@ engine = create_engine(
 try:
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
-    print(f"Успешное подключение к базе тикетов .")
+    print(f"Success.")
 except SQLAlchemyError as e:
-    print(f"Ошибка подключения к базе : {e}")
+    print(f"Failed : {e}")
     raise RuntimeError("Failed connection to db")
