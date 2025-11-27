@@ -58,6 +58,7 @@
             }
         }
 
+        // Кидаем все что есть от пользователя по api
         async function sendResponse() {
             if (chatCompleted) return;
 
@@ -99,6 +100,7 @@
             }
         }
 
+        // проверка закончилось ли заполение формы
         function updateChat(data) {
             const questionElement = document.getElementById('currentQuestion');
             const userInput = document.getElementById('userInput');

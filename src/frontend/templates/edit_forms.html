@@ -45,6 +45,7 @@ async function deleteForm(formId) {
     }
 }
 
+// получаем все формы юзера
 async function fetchForms() {
     try {
         const res = await fetch("/api/list_sheets");

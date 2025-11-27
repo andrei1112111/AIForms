@@ -32,7 +32,7 @@ li { margin: 5px 0; }
 
 <ul id="columnsList"></ul>
 
-<button onclick="createForm()">Создать таблицу</button>
+<button onclick="createForm()">Создать форму</button>
 <pre id="output"></pre>
 <br><br>
 <button onclick="window.location.href='/'">Вернуться на главную страницу</button>
@@ -51,6 +51,7 @@ function addColumn() {
   document.getElementById("colDesc").value = "";
 }
 
+// отрисока колонки как заполненной
 function renderColumns() {
   const ul = document.getElementById("columnsList");
   ul.innerHTML = "";
@@ -70,6 +71,7 @@ function updateColumnName(idx, val) { columns[idx].name = val; }
 function updateColumnDesc(idx, val) { columns[idx].desc = val; }
 function removeColumn(idx) { columns.splice(idx, 1); renderColumns(); }
 
+// создание формы через api
 async function createForm() {
   const title = document.getElementById("formTitle").value.trim();
   const desc = document.getElementById("formDesc").value.trim();
