@@ -35,7 +35,7 @@ SCOPES = [
 @app.route("/")
 def index():
     user_id = session.get("user_id")
-    if not user_id:
+    if not user_id:  # бросаем юзера в авторизацию чрез google
         return render_template("login.html")
 
     user = userRepository.get_by_id(user_id)
@@ -46,6 +46,7 @@ def index():
     return render_template("dashboard.html", email=user.email)
 
 
+# авторизация через google
 @app.route("/login")
 def login():
     flow = Flow.from_client_config(
@@ -70,7 +71,7 @@ def login():
     session["state"] = state
     return redirect(authorization_url)
 
-
+# callback для авторизации через google
 @app.route("/callback")
 def callback():
     state = session.get("state")
@@ -155,6 +156,7 @@ def create_user_sheet(user_id, columns, title="AI Form Responses", description="
 
     service = build("sheets", "v4", credentials=creds)
 
+    # запрос на создание таблички
     spreadsheet = service.spreadsheets().create(
         body={"properties": {"title": title}},
         fields="spreadsheetId"
@@ -261,6 +263,7 @@ def chat_interface(creator_user_id, chat_id):
                            )
 
 
+# метод для создания формы
 @app.route("/api/create_sheet", methods=["POST"])
 def api_create_sheet():
     user_id = session.get("user_id")
@@ -279,6 +282,7 @@ def api_create_sheet():
     return jsonify(result)
 
 
+# метод для общения с пользователем при заполнении формы в виде чата
 @app.route("/api/chat/<creator_user_id>/<chat_id>/send", methods=["POST"])
 def api_chat_send(creator_user_id, chat_id):
     """Обработка сообщений в чате с ИИ"""
@@ -308,8 +312,10 @@ def api_chat_send(creator_user_id, chat_id):
         "current_data": current_data
     }
 
+    # запрос в chat модельку
     ai_response = predict(str(ai_request))
 
+    # парсим ответ модельки
     question = ai_response.get("question", "")
     data = ai_response.get("data", {})
 
@@ -319,6 +325,7 @@ def api_chat_send(creator_user_id, chat_id):
     return jsonify({"question": question, "data": data})
 
 
+# апдейт состояния таблицы
 @app.route("/api/update_sheet", methods=["POST"])
 def api_update_sheet():
     user_id = session.get("user_id")
@@ -334,6 +341,7 @@ def api_update_sheet():
     return jsonify(result)
 
 
+# список таблиц пользователя
 @app.route("/api/list_sheets")
 def api_list_sheets():
     """Возвращает список таблиц пользователя"""
@@ -359,6 +367,7 @@ def api_list_sheets():
     return jsonify(sheets_list)
 
 
+# удаление формочки
 @app.route("/api/delete_form/<int:form_id>", methods=["POST"])
 def api_delete_form(form_id):
     user_id = session.get("user_id")
