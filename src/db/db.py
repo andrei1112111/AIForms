@@ -1,11 +1,16 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 import logging
-from src.config import config
+from config import config
+from time import sleep
 
 
 sqllogger = logging.getLogger("sqlalchemy.engine.Engine.engine")
 sqllogger.setLevel(logging.WARNING)
+
+print("waiting for connection...")
+sleep(5)
+print("...")
 
 engine = create_engine(
     "postgresql+psycopg2://{}:{}@{}:{}/{}".format(

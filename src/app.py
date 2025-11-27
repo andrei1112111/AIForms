@@ -5,18 +5,17 @@ from googleapiclient.discovery import build
 import os
 import requests
 
-
 from model import predict
+from config import config
 from db.entity import User, Form
 from db.repository import userRepository, formRepository
-from src.config import config
 
 app = Flask(__name__)
 app.template_folder = "frontend/templates"
 app.secret_key = "your-secret-key"
 
-HOST = config.FlaskServer.host
-PORT = config.FlaskServer.port
+HOST = "0.0.0.0"
+PORT = 8080
 
 # Настройки Google OAuth2
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # разрешаем HTTP для теста

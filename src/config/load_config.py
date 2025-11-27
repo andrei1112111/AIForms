@@ -23,10 +23,6 @@ def load_config() -> ConfigModel:
             "baseurl": os.getenv("DEEPSEEK_BASEURL"),
             "model_type": os.getenv("DEEPSEEK_MODELTYPE"),
         },
-        "FlaskServer": {
-            "host": os.getenv("SERVER_HOST", "localhost"),
-            "port": int(os.getenv("SERVER_PORT", 8080)),
-        },
         "GoogleAPIs": {
             "google_client_id": os.getenv("GOOGLE_CLIENT_ID"),
             "google_client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),

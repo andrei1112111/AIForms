@@ -13,11 +13,6 @@ class GoogleAPIs(BaseModel):
     google_client_secret: str
     redirect_url: str
 
-class FlaskServer(BaseModel):
-    """моделька под настройки фласка"""
-    host: str
-    port: int
-
 class PostgresConfigModel(BaseModel):
     """моделька под подключение к бд через psycpg"""
     host: str
@@ -34,7 +29,6 @@ class ConfigModel(BaseModel):
     PostgreSQL: PostgresConfigModel
     DeepSeek: DeepSeekConfigModel
     Logger: LoggingConfigModel
-    FlaskServer: FlaskServer
     GoogleAPIs: GoogleAPIs
  
     model_config = { # pydantic v2
