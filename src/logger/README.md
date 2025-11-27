@@ -30,4 +30,4 @@ logger.warning("Предупреждение")
 logger.error("Ошибка")
 ```
 
-## **[На главную](../../README.md)** 
+[НАЗАД](../../README.md) 

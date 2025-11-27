@@ -7,10 +7,8 @@ from config import config
 sqllogger = logging.getLogger("sqlalchemy.engine.Engine.engine")
 sqllogger.setLevel(logging.WARNING)
 
-
-
 engine = create_engine(
-    "postgresql+psycopg2://postgres:43720@localhost:5432/aiforms",
+    f"postgresql+psycopg2://{config.PostgreSQL.user}:{config.PostgreSQL.password}@{config.PostgreSQL.host}:{config.PostgreSQL.port}/aiforms",
     pool_size=5,
     max_overflow=10,
     echo=False,
