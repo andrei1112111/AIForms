@@ -5,23 +5,24 @@ from googleapiclient.discovery import build
 import os
 import requests
 
+
 from model import predict
 from db.entity import User, Form
 from db.repository import userRepository, formRepository
-
-
-HOST = "127.0.0.1"
-PORT = 5000
+from src.config import config
 
 app = Flask(__name__)
 app.template_folder = "frontend/templates"
 app.secret_key = "your-secret-key"
 
+HOST = config.FlaskServer.host
+PORT = config.FlaskServer.port
+
 # Настройки Google OAuth2
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # разрешаем HTTP для теста
-GOOGLE_CLIENT_ID = "624387588725-kljja5hh0d2jqb59nggni480m4p55ovv.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-REDIRECT_URI = f"http://{HOST}:{PORT}/callback"
+GOOGLE_CLIENT_ID = config.GoogleAPIs.google_client_id
+GOOGLE_CLIENT_SECRET = config.GoogleAPIs.google_client_secret
+REDIRECT_URI = config.GoogleAPIs.redirect_url
 
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
