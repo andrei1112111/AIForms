@@ -7,8 +7,6 @@ from src.config import config
 sqllogger = logging.getLogger("sqlalchemy.engine.Engine.engine")
 sqllogger.setLevel(logging.WARNING)
 
-
-
 engine = create_engine(
     "postgresql+psycopg2://{}:{}@{}:{}/{}".format(
         config.PostgreSQL.user,
